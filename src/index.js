@@ -49,23 +49,28 @@ const requestPayload = (prompt) => {
 	}
 }
 
-const agentInstructions = `
-Como asistente especializado, tu tarea es convertir código ABAP en un formato JSON estandarizado. 
+const agentInstructions = (promptUser) => {
+return `
+	Como asistente especializado, tu tarea es convertir código ABAP en un formato JSON estandarizado. 
 
-Instrucciones:
-1. Recibirás como entrada un fragmento de código ABAP proporcionado por el usuario.
-2. Debes transformarlo en un objeto JSON con la siguiente estructura exacta:
-   {
-     "codigoAbap": "[código ABAP original]"
-   }
-3. Conserva todo el contenido original del código ABAP como un string válido, escapando correctamente los caracteres especiales si es necesario.
-4. Asegúrate de que el JSON generado sea válido y pueda ser procesado automáticamente por sistemas downstream.
+	Instrucciones:
+	1. Recibirás como entrada un fragmento de código ABAP proporcionado por el usuario.
+	2. Debes transformarlo en un objeto JSON con la siguiente estructura exacta:
+		{
+			"codigoAbap": "[código ABAP original]"
+		}
+	3. Conserva todo el contenido original del código ABAP como un string válido, escapando correctamente los caracteres especiales si es necesario.
+	4. Asegúrate de que el JSON generado sea válido y pueda ser procesado automáticamente por sistemas downstream.
 
-Consideraciones:
-- Mantén el formato original del código (incluyendo saltos de línea y sangrías)
-- No interpretes ni modifiques el código ABAP recibido
-- El campo "codigoAbap" debe contener exactamente el input del usuario
+	Consideraciones:
+	- Mantén el formato original del código (incluyendo saltos de línea y sangrías)
+	- No interpretes ni modifiques el código ABAP recibido
+	- El campo "codigoAbap" debe contener exactamente el input del usuario
+
+	${promptUser}
+
 `;
+}
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -82,6 +87,19 @@ app.post('/api/abap', async (req, res) => {
 			details: 'El cuerpo de la solicitud debe contener un campo "prompt"',
 		});
 	}
+	const prompt = req.body.prompt;
+	const fullPrompt = agentInstructions(prompt);
+	const payload = requestPayload(fullPrompt);
+	const transformationToString = await generativeModelAI.generateContent(payload);
+	const response = transformationToString.response;
+
+	if (!response || !response.candidates || response.candidates.length === 0 || !response.candidates[0].content || !response.candidates[0].content.parts || response.candidates[0].content.parts.length === 0) { 
+		throw new Error('No se pudo transformar el código ABAP a un formato JSON válido.');
+	}
+
+
+
+
 
 
 
