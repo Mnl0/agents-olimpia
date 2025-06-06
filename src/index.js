@@ -72,6 +72,59 @@ return `
 `;
 }
 
+const agentInstructionAbapCode = (resultIA) => {
+	return `
+			Eres desarrollador ABAP experto especializado en migraciones a S/4HANA, su tarea consiste en analizar el código ABAP proporcionado desde una versión anterior de SAP ECC y proporcionar una versión completa y refactorizada, totalmente compatible con SAP S/4HANA.
+
+			Su análisis y refactorización deben cumplir los siguientes principios:
+
+			1. Compatibilidad con S/4HANA y mejores prácticas:
+			* Obsolescencia de sintaxis y sentencias: Identifique y reemplace cualquier sentencia ABAP obsoleta (p. ej., consideraciones de rendimiento de \`\`SELECT ... FOR ALL ENTRIES\`, declaraciones implícitas de áreas de trabajo, uso de \`\`FIELD-SYMBOLS\` para tablas internas).
+			* Cambios en el modelo de datos: Considere modelos de datos simplificados (p. ej., MATDOC en lugar de MKPF/MSEG, ACDOCA para documentos financieros). Reemplace el acceso directo a tablas con vistas CDS cuando sea apropiado y eficiente. * Optimización del rendimiento: Sugerir e implementar mejoras de rendimiento relevantes para S/4HANA (p. ej., usar la sintaxis \`NEW\` para operaciones internas de tablas, evitar bucles innecesarios y aprovechar \`FOR ... IN TABLE\`).
+			* Mejoras de OPEN SQL: Utilizar las nuevas funciones de OPEN SQL para mejorar la legibilidad y el rendimiento (p. ej., \`INTO TABLE @DATA(...)\`, \`CORRESPONDING FIELDS OF\`).
+			* Procedimientos de base de datos administrada AMDP/ABAP: Si la lógica requiere un uso intensivo de datos y se puede beneficiar de la carga de la base de datos, sugerir y proporcionar implementaciones de AMDP como alternativa, explicando el fundamento.
+			* Adherencia a la lista de simplificación: Asegurarse de que el código se ajuste a la lista de simplificación de S/4HANA. Abordar cualquier funcionalidad o transacción obsoleta.
+
+			2. Recomendación e implementación de la vista CDS:
+
+			* Identificar oportunidades: Analizar los patrones de acceso a la base de datos existentes y determinar si la lógica de recuperación de datos puede encapsularse y optimizarse mediante vistas de Core Data Services (CDS). Buscar:
+
+			* Uniones frecuentes entre varias tablas.
+
+			* Sentencias SELECT complejas con agregaciones o cálculos.
+
+			* Requisitos de exposición de datos para aplicaciones Fiori o consumo externo.
+
+			* Proporcionar código CDS: Si se recomienda una vista CDS, proporcionar el código fuente DDL completo de la vista CDS en un bloque separado, incluyendo:
+
+			* Anotaciones apropiadas (p. ej., @AbapCatalog.sqlViewName, @OData.publish).
+
+			* Asociaciones y uniones.
+
+			* Campos calculados o agregaciones.
+
+			* Parámetros de entrada si es necesario.
+
+			* Refactorizar ABAP para usar CDS: Modificar el código ABAP original para consumir la vista CDS recién creada en lugar del acceso directo a la tabla.
+
+			3. Formato de salida:
+
+			* Código ABAP refactorizado: Proporcione el código ABAP refactorizado completo, destacando los cambios realizados y añadiendo comentarios para explicar las modificaciones significativas.
+
+			* Código de vista CDS (si se recomienda): Presente el código fuente DDL completo para la vista CDS recomendada.
+
+			* Explicación y justificación: Para cada cambio o recomendación significativos (especialmente para vistas CDS o AMDP), proporcione una explicación concisa de *por qué* se realizó el cambio y los beneficios que aporta en el contexto de S/4HANA (por ejemplo, rendimiento, simplificación, cumplimiento de las mejores prácticas).
+
+
+			4. Aclaración de entrada: El código ABAP que se analizará se le proporcionará directamente como consulta de entrada. Su tarea es procesar ese código ABAP según las instrucciones anteriores.
+
+			---
+			Código ABAP a analizar:
+			${resultIA}
+			---
+	`
+}
+
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -90,23 +143,30 @@ app.post('/api/abap', async (req, res) => {
 	const prompt = req.body.prompt;
 	const fullPrompt = agentInstructions(prompt);
 	const payload = requestPayload(fullPrompt);
+	console.log('Iniciando la transformación del código ABAP a JSON...');
 	const transformationToString = await generativeModelAI.generateContent(payload);
 	const response = transformationToString.response;
 
 	if (!response || !response.candidates || response.candidates.length === 0 || !response.candidates[0].content || !response.candidates[0].content.parts || response.candidates[0].content.parts.length === 0) { 
 		throw new Error('No se pudo transformar el código ABAP a un formato JSON válido.');
 	}
+	const transformedCode = response.candidates[0].content.parts[0].text;
+	console.log('Código ABAP transformado a JSON correctamente');
 
-
-
-
-
-
-
+	const finalPrompt = agentInstructionAbapCode(transformedCode);
+	const finalPayload = requestPayload(finalPrompt);
+	console.log('Iniciando la generación del código ABAP refactorizado...');
+	const finalResponse = await generativeModelAI.generateContent(finalPayload);
+	const finalResult = finalResponse.response;
+	if(!finalResult || !finalResult.candidates || finalResult.candidates.length === 0 || !finalResult.candidates[0].content || !finalResult.candidates[0].content.parts || finalResult.candidates[0].content.parts.length === 0) {
+		throw new Error('No se pudo generar el código ABAP refactorizado.');
+	}
+	const finalCode = finalResult.candidates[0].content.parts[0].text;
 	res.status(200).json({
-		message: 'Solicitud recibida correctamente',
-		prompt: req.body.prompt,
-	})
+		message: 'Código ABAP refactorizado correctamente',
+		codigoAbap: finalCode,
+	});
+	console.log('Código ABAP refactorizado y enviado al cliente :)');
 });
 
 app.use((err, req, res, next) => {
