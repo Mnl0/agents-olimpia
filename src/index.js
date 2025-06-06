@@ -11,9 +11,9 @@ const corsOptions = {
 	method: ['GET', 'POST'],
 	allowedHeaders: ['Content-Type'],
 }
-const projectGCP = process.env.GOOGLE_CLOUD_PROJECT || 'agentspace-poc-etatex';
-const locationProject = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
-const modelName = process.env.GOOGLE_CLOUD_MODEL_NAME || 'gemini-2.0-flash-001';
+const projectGCP = process.env.GOOGLE_CLOUD_PROJECT;
+const locationProject = process.env.GOOGLE_CLOUD_LOCATION;
+const modelName = process.env.GOOGLE_CLOUD_MODEL_NAME;
 
 if (!projectGCP || !locationProject || !modelName) {
 	throw new Error(`Faltan variables de entorno necesarias
