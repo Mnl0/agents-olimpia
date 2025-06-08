@@ -131,13 +131,13 @@ app.use(express.text({ type: 'text/plain' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use((req, res, next) => {
-	if (req.body) {
-		req.body = req.body
+	if (req.body.prompt) {
+		req.body.prompt = req.body.prompt
 			.replace(/\\/g, '\\\\')  // Escapa backslashes
 			.replace(/"/g, '\\"')     // Escapa comillas
 			.replace(/\r?\n/g, '\n')  // Normaliza saltos de línea
 			.replace(/\t/g, '    ');
-		if (!req.body.match(/\b(TYPES|DATA|SELECT|METHODS)\b/i)) {
+		if (!req.body.prompt.match(/\b(TYPES|DATA|SELECT|METHODS)\b/i)) {
 			return res.status(400).json({
 				error: "'Codigo ABAP no valido",
 				details: 'El texto no parece contener estructura ABAP valida'
@@ -149,18 +149,18 @@ app.use((req, res, next) => {
 
 
 app.use((req, res, next) => {
-	console.log(`${new Date().toISOString()} - ${req.method} - ${req.body ? JSON.stringify(req.body) : 'Sin cuerpo'} - ${req.originalUrl}`);
+	console.log(`${new Date().toISOString()} - ${req.method} - ${req.body ? JSON.stringify(req.body.prompt) : 'Sin cuerpo'} - ${req.originalUrl}`);
 	next();
 });
 
 app.post('/api/abap', async (req, res) => {
-	if (!req.body) {
+	if (!req.body.prompt) {
 		return res.status(400).json({
 			error: 'Solicitud inválida',
 			details: 'El cuerpo de la solicitud debe contener un campo "prompt"',
 		});
 	}
-	const prompt = req.body;
+	const prompt = req.body.prompt;
 	// const fullPrompt = agentInstructions(prompt);
 	// const payload = requestPayload(fullPrompt);
 	// console.log('Iniciando la transformación del código ABAP a JSON...');
