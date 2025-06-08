@@ -161,19 +161,20 @@ app.post('/api/abap', async (req, res) => {
 		});
 	}
 	const prompt = req.body;
-	const fullPrompt = agentInstructions(prompt);
-	const payload = requestPayload(fullPrompt);
-	console.log('Iniciando la transformación del código ABAP a JSON...');
-	const transformationToString = await generativeModelAI.generateContent(payload);
-	const response = transformationToString.response;
+	// const fullPrompt = agentInstructions(prompt);
+	// const payload = requestPayload(fullPrompt);
+	// console.log('Iniciando la transformación del código ABAP a JSON...');
+	// const transformationToString = await generativeModelAI.generateContent(payload);
+	// const response = transformationToString.response;
 
-	if (!response || !response.candidates || response.candidates.length === 0 || !response.candidates[0].content || !response.candidates[0].content.parts || response.candidates[0].content.parts.length === 0) {
-		throw new Error('No se pudo transformar el código ABAP a un formato JSON válido.');
-	}
-	const transformedCode = response.candidates[0].content.parts[0].text;
-	console.log('Código ABAP transformado a JSON correctamente');
+	// if (!response || !response.candidates || response.candidates.length === 0 || !response.candidates[0].content || !response.candidates[0].content.parts || response.candidates[0].content.parts.length === 0) {
+	// 	throw new Error('No se pudo transformar el código ABAP a un formato JSON válido.');
+	// }
+	// const transformedCode = response.candidates[0].content.parts[0].text;
+	// console.log('Código ABAP transformado a JSON correctamente');
 
-	const finalPrompt = agentInstructionAbapCode(transformedCode);
+	// const finalPrompt = agentInstructionAbapCode(transformedCode);
+	const finalPrompt = agentInstructionAbapCode(prompt);
 	const finalPayload = requestPayload(finalPrompt);
 	console.log('Iniciando la generación del código ABAP refactorizado...');
 	const finalResponse = await generativeModelAI.generateContent(finalPayload);
