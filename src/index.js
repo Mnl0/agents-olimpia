@@ -130,26 +130,31 @@ app.use(express.json({ type: 'application/json' }));
 app.use(express.text({ type: 'text/plain' }));
 app.use(express.urlencoded({ extended: true }));
 
-app.use((req, res, next) => {
-	if (req.body.prompt) {
-		req.body.prompt = req.body.prompt
-			.replace(/\\/g, '\\\\')  // Escapa backslashes
-			.replace(/"/g, '\\"')     // Escapa comillas
-			.replace(/\r?\n/g, '\n')  // Normaliza saltos de línea
-			.replace(/\t/g, '    ');
-		if (!req.body.prompt.match(/\b(TYPES|DATA|SELECT|METHODS)\b/i)) {
-			return res.status(400).json({
-				error: "'Codigo ABAP no valido",
-				details: 'El texto no parece contener estructura ABAP valida'
-			})
-		}
-	}
-	next();
-});
+// app.use((req, res, next) => {
+// 	if (req.body.prompt) {
+// 		req.body.prompt = req.body.prompt
+// 			.replace(/\\/g, '\\\\')  // Escapa backslashes
+// 			.replace(/"/g, '\\"')     // Escapa comillas
+// 			.replace(/\r?\n/g, '\n')  // Normaliza saltos de línea
+// 			.replace(/\t/g, '    ');
+// 		if (!req.body.prompt.match(/\b(TYPES|DATA|SELECT|METHODS)\b/i)) {
+// 			return res.status(400).json({
+// 				error: "'Codigo ABAP no valido",
+// 				details: 'El texto no parece contener estructura ABAP valida'
+// 			})
+// 		}
+// 	}
+// 	next();
+// });
 
 
+// app.use((req, res, next) => {
+// 	console.log(`${new Date().toISOString()} - ${req.method} - ${req.body ? JSON.stringify(req.body.prompt) : 'Sin cuerpo'} - ${req.originalUrl}`);
+// 	next();
+// });
+
 app.use((req, res, next) => {
-	console.log(`${new Date().toISOString()} - ${req.method} - ${req.body ? JSON.stringify(req.body.prompt) : 'Sin cuerpo'} - ${req.originalUrl}`);
+	console.log(`${new Date().toISOString()} - ${req.method}`);
 	next();
 });
 
@@ -183,10 +188,13 @@ app.post('/api/abap', async (req, res) => {
 		throw new Error('No se pudo generar el código ABAP refactorizado.');
 	}
 	const finalCode = finalResult.candidates[0].content.parts[0].text;
-	res.status(200).json({
-		message: 'Código ABAP refactorizado correctamente',
-		codigoAbap: finalCode,
-	});
+	// res.status(200).json({
+	// 	message: 'Código ABAP refactorizado correctamente',
+	// 	codigoAbap: finalCode,
+	// });
+
+	const responseString = JSON.stringify(finalCode, null, 2);
+	res.status(200).send(responseString);
 	console.log('Código ABAP refactorizado y enviado al cliente :)');
 });
 
